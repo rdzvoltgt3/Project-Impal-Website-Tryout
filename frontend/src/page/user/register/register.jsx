@@ -1,37 +1,72 @@
 import React from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useRegister } from '../../../api/useRegister';
+import { Navbar } from '../../../component/navbar/navbar';
 
 const Register = () => {
     const navigate = useNavigate();
 
+    // State untuk data user
+    const [user, setUser] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        password: ''
+    });
+
+    const [errors, setErrors] = useState({});
+
+    // Handler untuk perubahan input
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setUser({ ...user, [name]: value });
+
+        if (errors[name]) {
+            setErrors({ ...errors, [name]: null });
+        }
+    };
+
+    const { mutate, isPending } = useRegister({
+        onSuccess: async (data) => {
+            console.log("Form disubmit!", user);
+            navigate('/login');
+        },
+        onError: (error) => {
+            const errorMessage = error.response.data.message;
+            console.log(errorMessage);
+            alert(errorMessage);
+        }
+    })
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Tambahkan logika pendaftaran Anda di sini
-        console.log("Form disubmit!");
-        navigate('/home'); // Contoh navigasi setelah submit
+
+        let tempErrors = {};
+        if (!user.name) tempErrors.name = "Nama lengkap wajib diisi";
+        if (user.name.length < 3) tempErrors.name = "Nama lengkap minimal 3 karakter";
+        if (!user.email) tempErrors.email = "Email wajib diisi";
+        if (!user.phone) tempErrors.phone = "Nomor telepon wajib diisi";
+        if (user.phone.length < 10) tempErrors.phone = "Nomor telepon minimal 10 angka";
+        if (user.phone.length > 15) tempErrors.phone = "Nomor telepon maksimal 15 angka";
+        if (user.phone[0] !== '0') tempErrors.phone = "Nomor telepon harus dimulai dengan angka 0";
+        if (!/^\d+$/.test(user.phone)) tempErrors.phone = "Nomor telepon harus berupa angka";
+        if (!user.password) tempErrors.password = "Password wajib diisi";
+        if (user.password.length < 8) tempErrors.password = "Password minimal 8 karakter";
+
+        if (Object.keys(tempErrors).length > 0) {
+            setErrors(tempErrors);
+            return;
+        }
+
+        mutate(user);
+
     };
 
     return (
         <div className="min-h-screen bg-gray-100 font-sans">
             {/* Navbar */}
-            <nav className="bg-[#3b41e3] px-6 py-4 flex items-center justify-between text-white">
-                <div className="flex items-center gap-8">
-                    <h1 className="text-2xl font-bold tracking-tight">TryoutKu</h1>
-                    <div className="hidden md:flex gap-6 text-sm font-medium">
-                        <a href="#" className="hover:opacity-80">Beranda</a>
-                        <a href="#" className="hover:opacity-80">Status Pembayaran</a>
-                        <a href="#" className="hover:opacity-80">Hasil Tryout</a>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <button className="px-6 py-2 border border-white/40 rounded-lg text-sm font-semibold hover:bg-white/10 transition">
-                        Masuk
-                    </button>
-                    <button className="px-6 py-2 border border-white/40 rounded-lg text-sm font-semibold hover:bg-white/10 transition">
-                        Daftar
-                    </button>
-                </div>
-            </nav>
+            <Navbar />
 
             {/* Container Kartu */}
             <main className="flex justify-center items-start pt-12 pb-12 px-4">
@@ -51,46 +86,66 @@ const Register = () => {
                             <div className="space-y-1.5">
                                 <label className="block text-sm font-bold text-gray-800">Nama lengkap</label>
                                 <input
+                                    name="name"
                                     type="text"
+                                    value={user.name}
+                                    onChange={handleChange}
                                     placeholder="masukan nama anda"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] focus:border-transparent placeholder-gray-300 text-sm transition"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] text-sm transition ${errors.name ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
+                                {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
                             </div>
 
                             {/* Email */}
                             <div className="space-y-1.5">
                                 <label className="block text-sm font-bold text-gray-800">Email</label>
                                 <input
+                                    name="email"
                                     type="email"
+                                    value={user.email}
+                                    onChange={handleChange}
                                     placeholder="nama@email.com"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] focus:border-transparent placeholder-gray-300 text-sm transition"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] text-sm transition ${errors.email ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
+                                {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
                             </div>
 
                             {/* Nomor Telepon */}
                             <div className="space-y-1.5">
                                 <label className="block text-sm font-bold text-gray-800">Nomor telepon</label>
                                 <input
-                                    type="tel"
+                                    name="phone"
+                                    type="text"
+                                    value={user.phone}
+                                    onChange={handleChange}
                                     placeholder="08xx......"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] focus:border-transparent placeholder-gray-300 text-sm transition"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] text-sm transition ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
+                                {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
                             </div>
 
                             {/* Password */}
                             <div className="space-y-1.5">
                                 <label className="block text-sm font-bold text-gray-800">Password</label>
                                 <input
+                                    name="password"
                                     type="password"
-                                    placeholder="kombinasi huruf, angka, dan karakter khusus"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] focus:border-transparent placeholder-gray-300 text-sm transition"
+                                    value={user.password}
+                                    onChange={handleChange}
+                                    placeholder="kombinasi huruf, angka, dan karakter"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b41e3] text-sm transition ${errors.password ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
+                                {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
                             </div>
 
                             {/* Submit Button */}
                             <button
                                 type="submit"
-                                className="w-full bg-[#3b41e3] text-white font-bold py-3 rounded-lg hover:bg-[#2f34b8] transition-colors mt-4 shadow-sm"
+                                className="w-full bg-[#3b41e3] text-white font-bold py-3 rounded-lg hover:bg-[#2f34b8] transition-colors mt-4 shadow-sm cursor-pointer"
                             >
                                 Daftar Sekarang
                             </button>
@@ -99,15 +154,9 @@ const Register = () => {
                             <div className="text-center pt-2">
                                 <p className="text-sm text-gray-400">
                                     Sudah punya akun?{' '}
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate('/login')}
-                                        className="text-[#3b41e3] font-medium hover:underline focus:outline-none"
-                                    >
-                                        <Link to="/login">
-                                            Masuk
-                                        </Link>
-                                    </button>
+                                    <Link to="/login" className="text-[#3b41e3] font-medium hover:underline">
+                                        Masuk
+                                    </Link>
                                 </p>
                             </div>
                         </form>
